@@ -55,7 +55,37 @@ HotSopt内置多个及时编译器：C1、C2、Graal（java10正式引入的实�
  HotSpot会根据CPU数量设置编译线程的数量，然后编译线程的数量按照1：2比例分配给C1和C2及时编译器。
           
 ## 02 Java的基本类型
-        
+java基本类型：byte、short、char、boolean、int、long、float、double。
+  
+类型|值域|默认值|虚拟机内部符号    
+:---:|:---:|:---:|:---:
+boolean|{false,true}|false|Z
+byte|[-128,127] (-2<sup>7</sup>,2<sup>7</sup>-1)|0|B
+short|[-32768,32767] (-2<sup>15</sup>,2<sup>15</sup>-1)|0|S
+char|[0,65535] (0,2<sup>16</sup>)|'\u0000'|C
+int|[-2<sup>31</sup>,2<sup>31</sup>-1]|0|I
+long|[-2<sup>63</sup>,2<sup>63</sup>-1]|0L|L
+float| |+0.0F|F
+double| | +0.00D|D
+默认值在内存中都是0  
+- boolean类型  
+java语言规范中boolean类型只有两种值：true、false。boolean类型被映射成init类型：true映射成1，false映射成0。  
+java虚拟机规范要求java编译器也要遵守这个编码规范，用整数相关字节码实现逻辑运算、boolean类型条件跳转。  
+可以通过使用字节码编辑工具修改boolean类型变量的值为0、1之外的整数，这样字节码工具比如：AsmTools(OpenJDK中包含)、ASM等。  
+- java基本类型的大小  
+    - java栈  
+    jvm每调用一个java方法，创建一个栈帧。栈帧两个主要组成部分：局部变量区、字节码操作数栈。局部变量区：局部变量、实例方法this指针、  
+    方法参数。jvm规范中，局部变量区相当于一个数组，long、double占用两个数组单元存储、其他基本数据类型和引用类型值占用一个单元，一个单元   
+    占用（32位HotSpot中占用4个字节、64位占用8个字节）
+    - java堆  
+    在java堆中byte、char、short三种类型字段和数组单元分别占用一个字节、两个字节、两个字节。boolean字段占用一个字节，boolean数组使用byte  
+    数组实现。为了保证java堆中的boolean类型字段值合法，HotSpot在存储时显式进行掩码操作，只取最有一位值存放boolean字段或数组中（奇数则为1，  偶数为0）。
+      
+jvm的算数运算几乎全部依赖于操作数栈，需要将jvm堆中的boolean、byte、short加载到操作数栈中，然后把操作数栈中的值当做int类型运算。  
+## 03 jvm如何加载java类  
+
+
+    
         
        
     
