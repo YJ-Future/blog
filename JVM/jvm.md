@@ -102,7 +102,7 @@ java9中，扩展类加载器改成了平台类加载器，引入了模块系统
 链接是把创建的类合并到jvm中，让类可以执行的过程。链接过程分三步走：验证、准备、初始化。  
 - 验证：校验被加载的类是否满足jvm的约束要求。比如验证字节码开头四个字节应该是魔数（CAFE BABE）。  
 > 魔数通常用于标示文件格式类型。具体魔数的介绍：https://en.wikipedia.org/wiki/Magic_number_%28programming%29   
-  java字节码使用CAFE BABE作为魔数的原因：https://en.wikipedia.org/wiki/Java_class_file的 Magic Number部分  
+  java字节码使用CAFE BABE作为魔数的原因：https://en.wikipedia.org/wiki/Java_class_file 的Magic Number部分  
     
 - 准备：为被加载器类的静态字段分配内存。
 - 解析：将符号引用解析成实际引用。   
