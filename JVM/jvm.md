@@ -276,7 +276,7 @@ finally 2
 对于异常路径，java编译器会生成一个或多个异常表条目，监控整个try-catch代码块，并且捕获所有种类的异常类型，这些异常表条目的target指向复制的finally代码块。  
 在finally代码块最后，java编译器会重新抛出所捕获的异常。但是在finally块儿中return了，则异常不会抛出了。  
 
-## JVM如何实现反射  
+## 07 JVM如何实现反射  
 反射是java语言中一个相当重要的特性，可以实现程序在运行过程中获取类的所有方法、字段等信息、支持调用类的方法、获取字段的值。  
 例子：  
 - 可以通过Class对象获取该类的所有方法，可以通过Method.setAccessible方法绕过java语言的访问权限，实现在私有方法类之外的类中被调用。  
@@ -378,6 +378,49 @@ private MethodAccessor acquireMethodAccessor() {
     }
 ```
 ### 反射调用开销  
+Class.forName方法会调用本地方法，相对比较耗时。  
+Class.getMethod方法会遍历该类的公有方法，如果没有匹配到，会遍历父类的公有方法。  
+在实践中，一般会通过程序缓存Class.forName、Class.getMethod结果，用空间换时间。  
+Method.invoke方法是一个变成参数方法，在字节码层面使用的参数为Object数组，如果传参是一个，所以会构造一个Object数组，会有一定的性能消耗。  
+Object数组不能存储基本类型，那么如果参数是一个int，那么会涉及到装箱操作，且默认jvm缓存了[-128,127]范围中的整数对应的Integer对象，如果在这个范围之外，则需要新建一个Integer对象。  
+虚方法调用的动态实现，Method.invoke方法对应一个GeneratedMethodAccessor。在实际生产环境中，往往会有多个不同的反射调用，对应多个GeneratedMethodAccessor。   
+在设置关闭inflation或者超过设定的调用阈值之后生成动态调用时，ReflectionFactory的newMethodAccessor方法中、本地方法NativeMethodAccessorImpl的invoke
+方法中，都会调用类似的方法：`(new MethodAccessorGenerator()).generateMethod(this.method.getDeclaringClass(), this.method.getName(), this.method.getParameterTypes(), this.method.getReturnType(), this.method.getExceptionTypes(), this.method.getModifiers());`，具体MethodAccessorGenerator的generateMethod方法源码如下：  
+```
+public MethodAccessor generateMethod(Class declaringClass,
+                                            String name,
+                                               Class[] parameterTypes,
+                                               Class   returnType,
+                                               Class[] checkedExceptions,
+                                               int modifiers)
+  {
+         return (MethodAccessor) generate(declaringClass,
+                                           name,
+                                           parameterTypes,
+                                           returnType,
+                                           checkedExceptions,
+                                           modifiers,
+                                           false,
+                                           false,
+                                           null);
+  }
+   
+private MagicAccessorImpl generate(final Class declaringClass,
+                                            String name,
+                                            Class[] parameterTypes,
+                                            Class   returnType,
+                                            Class[] checkedExceptions,
+                                            int modifiers,
+                                            boolean isConstructor,
+                                            boolean forSerialization,
+                                            Class serializationTargetClass){
+       ... // 字节码生成                                     
+  }
+```
+因为jvm会对invokevirtual或invokeinterface记录调用者的具体类型，称为profile，但是无法记录太多的类型，如果反射调用涉及的类型太多，会造成反射调用没有被内联。  
+可以通过jvm参数 -XX:TypeProfileWidth参数设置每个调用能够记录的类型数量，默认值是2。   
+## 08 09 jvm如何实现invokedynamic  
+
 
 
 
